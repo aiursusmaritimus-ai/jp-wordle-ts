@@ -1,239 +1,44 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>J-wordle_TS</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<!-- キーボード -->
+<div id="keyboard" class="grid grid-cols-10 gap-2 mt-4">
+  <!-- JSで生成 -->
+</div>
 
-  <style>
-    /* ネオン光エフェクト */
-    .neon {
-      text-shadow:
-        0 0 5px #fff,
-        0 0 10px #fff,
-        0 0 20px #0ff,
-        0 0 30px #0ff,
-        0 0 40px #0ff,
-        0 0 55px #0ff,
-        0 0 75px #0ff;
-    }
+<script>
+  // ひらがな表スタイルのキー配置
+  const keyRows = [
+    ["わ","ら","や","ま","は","な","た","さ","か","あ"],
+    ["","り","","み","ひ","に","ち","し","き","い"],
+    ["を","る","ゆ","む","ふ","ぬ","つ","す","く","う"],
+    ["","れ","","め","へ","ね","て","せ","け","え"],
+    ["ん","ろ","よ","も","ほ","の","と","そ","こ","お"]
+  ];
 
-    .neon-green {
-      box-shadow:
-        0 0 5px #0f0,
-        0 0 10px #0f0,
-        0 0 20px #0f0,
-        0 0 40px #0f0;
-    }
+  const keyboardEl = document.getElementById("keyboard");
 
-    .neon-yellow {
-      box-shadow:
-        0 0 5px #ff0,
-        0 0 10px #ff0,
-        0 0 20px #ff0,
-        0 0 40px #ff0;
-    }
-
-    .neon-gray {
-      box-shadow:
-        0 0 5px #888,
-        0 0 10px #888,
-        0 0 20px #888,
-        0 0 40px #888;
-    }
-
-    /* ポップアップ */
-    #popup {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: rgba(0,0,0,0.8);
-      color: #0ff;
-      padding: 12px 24px;
-      border-radius: 10px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      font-weight: bold;
-      font-size: 20px;
-      text-shadow: 0 0 10px #0ff;
-      z-index: 50;
-    }
-
-    /* 震えアニメーション */
-    .shake {
-      animation: shake 0.3s;
-    }
-
-    @keyframes shake {
-      0% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      50% { transform: translateX(5px); }
-      75% { transform: translateX(-5px); }
-      100% { transform: translateX(0); }
-    }
-  </style>
-</head>
-
-<body class="bg-black text-white flex flex-col items-center p-4">
-
-  <h1 class="text-4xl font-bold mb-4 neon">J-wordle_TS</h1>
-  <div id="category-hint" class="text-cyan-300 text-lg mb-2 neon"></div>
-  <div id="dict-count" class="bg-gray-800 px-3 py-1 rounded mb-4 neon"></div>
-
-  <!-- ポップアップ -->
-  <div id="popup"></div>
-
-  <!-- 盤面 -->
-  <div id="board" class="grid grid-rows-6 gap-2 mb-4"></div>
-
-  <!-- キーボード -->
-  <div id="keyboard" class="grid grid-cols-10 gap-2"></div>
-
-  <div id="result" class="text-xl font-bold mt-4"></div>
-
-  <script>
-    const keys = [
-      "あ","い","う","え","お",
-      "か","き","く","け","こ",
-      "さ","し","す","せ","そ",
-      "た","ち","つ","て","と",
-      "な","に","ぬ","ね","の",
-      "は","ひ","ふ","へ","ほ",
-      "ま","み","む","め","も",
-      "や","ゆ","よ",
-      "ら","り","る","れ","ろ",
-      "わ","を","ん",
-      "削","決定"
-    ];
-
-    const boardEl = document.getElementById("board");
-    const keyboardEl = document.getElementById("keyboard");
-    const resultEl = document.getElementById("result");
-    const dictCountEl = document.getElementById("dict-count");
-    const categoryHintEl = document.getElementById("category-hint");
-    const popupEl = document.getElementById("popup");
-
-    let dictionary = [];
-    let answer = "";
-    let answerCategory = "";
-    let currentRow = 0;
-    let currentCol = 0;
-    const maxRows = 6;
-    const maxCols = 5;
-
-    /* 盤面生成 */
-    for (let r = 0; r < maxRows; r++) {
-      const row = document.createElement("div");
-      row.className = "grid grid-cols-5 gap-2";
-      for (let c = 0; c < maxCols; c++) {
-        const cell = document.createElement("div");
-        cell.className =
-          "w-14 h-14 border border-cyan-400 flex items-center justify-center text-3xl font-bold text-cyan-200 bg-black neon";
-        row.appendChild(cell);
-      }
-      boardEl.appendChild(row);
-    }
-
-    /* キーボード生成 */
-    keys.forEach(k => {
+  keyRows.forEach(row => {
+    row.forEach(k => {
       const b = document.createElement("button");
-      b.textContent = k;
-      b.className =
-        "bg-gray-800 hover:bg-gray-700 px-2 py-2 rounded text-cyan-300 neon";
-      b.onclick = () => handleKey(k);
+      b.textContent = k || ""; // 空欄はボタンなし
+      b.className = k
+        ? "bg-gray-800 hover:bg-gray-700 w-10 h-10 rounded text-cyan-300 neon"
+        : "w-10 h-10";
+      if (k) b.onclick = () => handleKey(k);
       keyboardEl.appendChild(b);
     });
+  });
 
-    function handleKey(k) {
-      const rows = boardEl.children;
-      const cells = rows[currentRow].children;
-
-      if (k === "削") {
-        if (currentCol > 0) {
-          currentCol--;
-          cells[currentCol].textContent = "";
-        }
-        return;
-      }
-
-      if (k === "決定") {
-        if (currentCol < maxCols) return;
-        const guess = Array.from(cells).map(c => c.textContent).join("");
-        checkGuess(guess);
-        return;
-      }
-
-      if (currentCol < maxCols && /^[ぁ-んー]$/.test(k)) {
-        cells[currentCol].textContent = k;
-        currentCol++;
-      }
-    }
-
-    async function initGame() {
-      dictionary = await fetch("dictionary.json").then(r => r.json());
-      dictCountEl.textContent = `語数: ${dictionary.length}`;
-      const answerObj = dictionary[Math.floor(Math.random() * dictionary.length)];
-      answer = answerObj.word;
-      answerCategory = answerObj.category;
-      categoryHintEl.textContent = `カテゴリ: ${answerCategory}`;
-    }
-
-    function showPopup(message) {
-      popupEl.textContent = message;
-      popupEl.style.opacity = "1";
-      setTimeout(() => {
-        popupEl.style.opacity = "0";
-      }, 2000);
-    }
-
-    function shakeRow(rowIndex) {
-      const row = boardEl.children[rowIndex];
-      row.classList.add("shake");
-      setTimeout(() => row.classList.remove("shake"), 300);
-    }
-
-    function checkGuess(guess) {
-      const rows = boardEl.children;
-      const cells = rows[currentRow].children;
-
-      if (guess.length !== 5) {
-        showPopup("5文字入力してください");
-        shakeRow(currentRow);
-        return;
-      }
-
-      const isValid = dictionary.some(item => item.word === guess);
-      if (!isValid) {
-        showPopup("辞書に存在しない単語です");
-        shakeRow(currentRow);
-        return;
-      }
-
-      for (let i = 0; i < 5; i++) {
-        if (guess[i] === answer[i]) {
-          cells[i].classList.add("bg-green-500", "neon-green");
-        } else if (answer.includes(guess[i])) {
-          cells[i].classList.add("bg-yellow-400", "neon-yellow");
-        } else {
-          cells[i].classList.add("bg-gray-700", "neon-gray");
-        }
-      }
-
-      if (guess === answer) {
-        showPopup("🎉 正解！");
-      } else {
-        currentRow++;
-        currentCol = 0;
-        if (currentRow >= maxRows) {
-          showPopup(`残念！正解は「${answer}」`);
-        }
-      }
-    }
-
-    initGame();
-  </script>
-
-</body>
-</html>
+  // 削除・決定ボタンを追加
+  const controlRow = document.createElement("div");
+  controlRow.className = "col-span-10 flex justify-center space-x-4 mt-2";
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "削除";
+  delBtn.className = "bg-pink-600 hover:bg-pink-700 px-4 py-2 rounded neon";
+  delBtn.onclick = () => handleKey("削");
+  const enterBtn = document.createElement("button");
+  enterBtn.textContent = "決定";
+  enterBtn.className = "bg-green-600 hover:bg-green-700 px-4 py-2 rounded neon";
+  enterBtn.onclick = () => handleKey("決定");
+  controlRow.appendChild(delBtn);
+  controlRow.appendChild(enterBtn);
+  keyboardEl.appendChild(controlRow);
+</script>
