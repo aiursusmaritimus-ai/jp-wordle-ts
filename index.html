@@ -158,6 +158,19 @@
       });
     });
 
+    /* 濁音・半濁音・小文字キー */
+    const extraKeys = [
+      "゛","゜","小"
+    ];
+
+    extraKeys.forEach(k => {
+      const b = document.createElement("button");
+      b.textContent = k;
+      b.className = "key-default w-10 h-10";
+      b.onclick = () => handleKey(k);
+      keyboardEl.appendChild(b);
+    });
+
     /* 削除・決定ボタン */
     const controlRow = document.createElement("div");
     controlRow.className = "col-span-10 flex justify-center space-x-4 mt-2";
@@ -181,6 +194,25 @@
     controlRow.appendChild(enterBtn);
     keyboardEl.appendChild(controlRow);
 
+    /* 濁音・半濁音・小文字変換テーブル */
+    const dakuten = {
+      "か":"が","き":"ぎ","く":"ぐ","け":"げ","こ":"ご",
+      "さ":"ざ","し":"じ","す":"ず","せ":"ぜ","そ":"ぞ",
+      "た":"だ","ち":"ぢ","つ":"づ","て":"で","と":"ど",
+      "は":"ば","ひ":"び","ふ":"ぶ","へ":"べ","ほ":"ぼ"
+    };
+
+    const handakuten = {
+      "は":"ぱ","ひ":"ぴ","ふ":"ぷ","へ":"ぺ","ほ":"ぽ"
+    };
+
+    const smallMap = {
+      "あ":"ぁ","い":"ぃ","う":"ぅ","え":"ぇ","お":"ぉ",
+      "や":"ゃ","ゆ":"ゅ","よ":"ょ",
+      "つ":"っ",
+      "わ":"ゎ"
+    };
+
     /* 入力処理 */
     function handleKey(k) {
       const rows = boardEl.children;
@@ -201,6 +233,34 @@
         return;
       }
 
+      /* 濁音 */
+      if (k === "゛") {
+        const last = cells[currentCol - 1]?.textContent;
+        if (dakuten[last]) {
+          cells[currentCol - 1].textContent = dakuten[last];
+        }
+        return;
+      }
+
+      /* 半濁音 */
+      if (k === "゜") {
+        const last = cells[currentCol - 1]?.textContent;
+        if (handakuten[last]) {
+          cells[currentCol - 1].textContent = handakuten[last];
+        }
+        return;
+      }
+
+      /* 小文字化 */
+      if (k === "小") {
+        const last = cells[currentCol - 1]?.textContent;
+        if (smallMap[last]) {
+          cells[currentCol - 1].textContent = smallMap[last];
+        }
+        return;
+      }
+
+      /* 通常入力 */
       if (currentCol < maxCols && /^[ぁ-んー]$/.test(k)) {
         cells[currentCol].textContent = k;
         currentCol++;
