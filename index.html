@@ -5,35 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>J-wordle_TS</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
-    .neon {
-      text-shadow: 0 0 5px #fff, 0 0 10px #0ff, 0 0 20px #0ff, 0 0 40px #0ff;
+    body {
+      background-color: #121213;
+      color: #ffffff;
     }
-    .neon-green {
-      box-shadow: 0 0 10px #0f0, 0 0 20px #0f0, 0 0 40px #0f0;
-    }
-    .neon-yellow {
-      box-shadow: 0 0 10px #ff0, 0 0 20px #ff0, 0 0 40px #ff0;
-    }
-    .neon-gray {
-      box-shadow: 0 0 10px #888, 0 0 20px #888, 0 0 40px #888;
-    }
+
+    /* ポップアップ */
     #popup {
       position: fixed;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background-color: rgba(0,0,0,0.8);
-      color: #0ff;
+      background-color: #3a3a3c;
+      color: #ffffff;
       padding: 12px 24px;
-      border-radius: 10px;
+      border-radius: 8px;
       opacity: 0;
       transition: opacity 0.3s ease;
       font-weight: bold;
-      font-size: 20px;
-      text-shadow: 0 0 10px #0ff;
+      font-size: 18px;
       z-index: 50;
     }
+
+    /* 震えアニメーション */
     .shake {
       animation: shake 0.3s;
     }
@@ -44,16 +40,44 @@
       75% { transform: translateX(-5px); }
       100% { transform: translateX(0); }
     }
+
+    /* マスの色（本家準拠） */
+    .correct {
+      background-color: #6aaa64 !important;
+      border-color: #6aaa64 !important;
+    }
+    .present {
+      background-color: #c9b458 !important;
+      border-color: #c9b458 !important;
+    }
+    .absent {
+      background-color: #3a3a3c !important;
+      border-color: #3a3a3c !important;
+    }
+
+    /* キーボード色（本家準拠） */
+    .key-default {
+      background-color: #818384;
+      color: white;
+    }
+    .key-default:hover {
+      background-color: #9a9b9d;
+    }
   </style>
 </head>
 
-<body class="bg-black text-white flex flex-col items-center p-4">
-  <h1 class="text-4xl font-bold mb-4 neon">J-wordle_TS</h1>
-  <div id="category-hint" class="text-cyan-300 text-lg mb-2 neon"></div>
-  <div id="dict-count" class="bg-gray-800 px-3 py-1 rounded mb-4 neon"></div>
+<body class="flex flex-col items-center p-4">
+
+  <h1 class="text-4xl font-bold mb-4">J-wordle_TS</h1>
+  <div id="category-hint" class="text-gray-300 text-lg mb-2"></div>
+  <div id="dict-count" class="bg-gray-700 px-3 py-1 rounded mb-4"></div>
+
   <div id="popup"></div>
+
   <div id="board" class="grid grid-rows-6 gap-2 mb-4"></div>
+
   <div id="keyboard" class="grid grid-cols-10 gap-2 mt-4"></div>
+
   <div id="result" class="text-xl font-bold mt-4"></div>
 
   <script>
@@ -72,18 +96,20 @@
     const maxRows = 6;
     const maxCols = 5;
 
+    /* 盤面生成（本家風） */
     for (let r = 0; r < maxRows; r++) {
       const row = document.createElement("div");
       row.className = "grid grid-cols-5 gap-2";
       for (let c = 0; c < maxCols; c++) {
         const cell = document.createElement("div");
         cell.className =
-          "w-14 h-14 border border-cyan-400 flex items-center justify-center text-3xl font-bold text-cyan-200 bg-black neon";
+          "w-14 h-14 border border-gray-600 flex items-center justify-center text-3xl font-bold bg-[#121213]";
         row.appendChild(cell);
       }
       boardEl.appendChild(row);
     }
 
+    /* ひらがな表キーボード（本家風色） */
     const keyRows = [
       ["わ","ら","や","ま","は","な","た","さ","か","あ"],
       ["","り","","み","ひ","に","ち","し","き","い"],
@@ -97,23 +123,27 @@
         const b = document.createElement("button");
         b.textContent = k || "";
         b.className = k
-          ? "bg-gray-800 hover:bg-gray-700 w-10 h-10 rounded text-cyan-300 neon"
+          ? "key-default w-10 h-10 rounded"
           : "w-10 h-10";
         if (k) b.onclick = () => handleKey(k);
         keyboardEl.appendChild(b);
       });
     });
 
+    /* 削除・決定ボタン */
     const controlRow = document.createElement("div");
     controlRow.className = "col-span-10 flex justify-center space-x-4 mt-2";
+
     const delBtn = document.createElement("button");
     delBtn.textContent = "削除";
-    delBtn.className = "bg-pink-600 hover:bg-pink-700 px-4 py-2 rounded neon";
+    delBtn.className = "key-default px-4 py-2 rounded";
     delBtn.onclick = () => handleKey("削");
+
     const enterBtn = document.createElement("button");
     enterBtn.textContent = "決定";
-    enterBtn.className = "bg-green-600 hover:bg-green-700 px-4 py-2 rounded neon";
+    enterBtn.className = "key-default px-4 py-2 rounded";
     enterBtn.onclick = () => handleKey("決定");
+
     controlRow.appendChild(delBtn);
     controlRow.appendChild(enterBtn);
     keyboardEl.appendChild(controlRow);
@@ -185,11 +215,11 @@
 
       for (let i = 0; i < 5; i++) {
         if (guess[i] === answer[i]) {
-          cells[i].classList.add("bg-green-500", "neon-green");
+          cells[i].classList.add("correct");
         } else if (answer.includes(guess[i])) {
-          cells[i].classList.add("bg-yellow-400", "neon-yellow");
+          cells[i].classList.add("present");
         } else {
-          cells[i].classList.add("bg-gray-700", "neon-gray");
+          cells[i].classList.add("absent");
         }
       }
 
