@@ -8,7 +8,7 @@
 
   <style>
     body {
-      background-color: #f3f3f3; /* 明るい背景（Wordleライトモード） */
+      background-color: #f3f3f3; /* Wordleライトモード */
       color: #000000;
       font-family: Arial, Helvetica, sans-serif;
     }
@@ -41,7 +41,6 @@
       100% { transform: translateX(0); }
     }
 
-    /* マス色（Wordle本家ライトモード） */
     .correct {
       background-color: #6aaa64 !important;
       border-color: #6aaa64 !important;
@@ -58,7 +57,6 @@
       color: white;
     }
 
-    /* キーボード色（ライトモード） */
     .key-default {
       background-color: #d3d6da;
       color: #000;
@@ -66,6 +64,27 @@
     }
     .key-default:hover {
       background-color: #e5e7eb;
+    }
+
+    /* 決定ボタン（緑） */
+    .key-enter {
+      background-color: #6aaa64;
+      color: white;
+      border-radius: 4px;
+    }
+    .key-enter:hover {
+      background-color: #7cbc75;
+    }
+
+    /* 削除ボタン（濃いグレー） */
+    .key-delete {
+      background-color: #787c7e;
+      color: white;
+      border-radius: 4px;
+      font-size: 20px;
+    }
+    .key-delete:hover {
+      background-color: #8c9092;
     }
   </style>
 </head>
@@ -134,18 +153,18 @@
       });
     });
 
-    /* 削除・決定ボタン */
+    /* 削除・決定ボタン（色付き＋Backspaceアイコン） */
     const controlRow = document.createElement("div");
     controlRow.className = "col-span-10 flex justify-center space-x-4 mt-2";
 
     const delBtn = document.createElement("button");
-    delBtn.textContent = "削除";
-    delBtn.className = "key-default px-4 py-2";
+    delBtn.innerHTML = "←"; /* Backspaceアイコン */
+    delBtn.className = "key-delete px-4 py-2";
     delBtn.onclick = () => handleKey("削");
 
     const enterBtn = document.createElement("button");
     enterBtn.textContent = "決定";
-    enterBtn.className = "key-default px-4 py-2";
+    enterBtn.className = "key-enter px-4 py-2";
     enterBtn.onclick = () => handleKey("決定");
 
     controlRow.appendChild(delBtn);
