@@ -99,12 +99,13 @@
       }
     }
 
-    // ゲーム開始
+    // ゲーム状態
     let answer = "";
     let answerCategory = "";
+    let dictionary = [];
 
     async function initGame() {
-      const dictionary = await fetch("dictionary.json").then(r => r.json());
+      dictionary = await fetch("dictionary.json").then(r => r.json());
 
       dictCountEl.textContent = `語数: ${dictionary.length}`;
 
@@ -120,15 +121,22 @@
     // 判定
     document.getElementById("enter").onclick = () => {
       const guess = inputEl.value;
+
       if (guess.length !== 5) {
         resultEl.textContent = "5文字入力してください";
+        return;
+      }
+
+      // 辞書に存在するかチェック
+      const isValid = dictionary.some(item => item.word === guess);
+      if (!isValid) {
+        resultEl.textContent = "辞書に存在しない単語です";
         return;
       }
 
       if (guess === answer) {
         resultEl.textContent = "正解！";
       } else {
-        // 色判定
         let res = "";
         for (let i = 0; i < 5; i++) {
           if (guess[i] === answer[i]) res += "🟩";
