@@ -126,6 +126,7 @@
     const maxRows = 6;
     const maxCols = 5;
 
+    /* 盤面生成 */
     for (let r = 0; r < maxRows; r++) {
       const row = document.createElement("div");
       row.className = "grid grid-cols-5 gap-2";
@@ -138,6 +139,7 @@
       boardEl.appendChild(row);
     }
 
+    /* キーボード（ひらがな表） */
     const keyRows = [
       ["わ","ら","や","ま","は","な","た","さ","か","あ"],
       ["","り","","み","ひ","に","ち","し","き","い"],
@@ -150,14 +152,13 @@
       row.forEach(k => {
         const b = document.createElement("button");
         b.textContent = k || "";
-        b.className = k
-          ? "key-default w-10 h-10"
-          : "w-10 h-10";
+        b.className = k ? "key-default w-10 h-10" : "w-10 h-10";
         if (k) b.onclick = () => handleKey(k);
         keyboardEl.appendChild(b);
       });
     });
 
+    /* 削除・決定ボタン */
     const controlRow = document.createElement("div");
     controlRow.className = "col-span-10 flex justify-center space-x-4 mt-2";
 
@@ -180,6 +181,7 @@
     controlRow.appendChild(enterBtn);
     keyboardEl.appendChild(controlRow);
 
+    /* 入力処理 */
     function handleKey(k) {
       const rows = boardEl.children;
       const cells = rows[currentRow].children;
@@ -205,6 +207,7 @@
       }
     }
 
+    /* ゲーム開始 */
     async function initGame() {
       dictionary = await fetch("dictionary.json").then(r => r.json());
       dictCountEl.textContent = `語数: ${dictionary.length}`;
@@ -214,6 +217,7 @@
       categoryHintEl.textContent = `カテゴリ: ${answerCategory}`;
     }
 
+    /* ポップアップ */
     function showPopup(message) {
       popupEl.textContent = message;
       popupEl.style.opacity = "1";
@@ -222,12 +226,14 @@
       }, 2000);
     }
 
+    /* 震え */
     function shakeRow(rowIndex) {
       const row = boardEl.children[rowIndex];
       row.classList.add("shake");
       setTimeout(() => row.classList.remove("shake"), 300);
     }
 
+    /* 判定 */
     function checkGuess(guess) {
       const rows = boardEl.children;
       const cells = rows[currentRow].children;
@@ -252,3 +258,21 @@
           cells[i].classList.add("present");
         } else {
           cells[i].classList.add("absent");
+        }
+      }
+
+      if (guess === answer) {
+        showPopup("🎉 正解！");
+      } else {
+        currentRow++;
+        currentCol = 0;
+        if (currentRow >= maxRows) {
+          showPopup(`残念！正解は「${answer}」`);
+        }
+      }
+    }
+
+    initGame();
+  </script>
+</body>
+</html>
