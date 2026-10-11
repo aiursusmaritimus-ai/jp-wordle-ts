@@ -5,6 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>J-wordle_TS</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ポップアップアニメーション */
+    #popup {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      font-weight: bold;
+      z-index: 50;
+    }
+
+    /* 震えアニメーション */
+    .shake {
+      animation: shake 0.3s;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+  </style>
 </head>
 
 <body class="bg-gray-900 text-white flex flex-col items-center p-4">
@@ -13,10 +43,11 @@
   <div id="category-hint" class="text-gray-300 text-lg mb-2"></div>
   <div id="dict-count" class="bg-gray-700 px-3 py-1 rounded mb-4"></div>
 
+  <!-- ポップアップ -->
+  <div id="popup"></div>
+
   <!-- 盤面 -->
-  <div id="board" class="grid grid-rows-6 gap-2 mb-4">
-    <!-- JSで生成 -->
-  </div>
+  <div id="board" class="grid grid-rows-6 gap-2 mb-4"></div>
 
   <!-- キーボード -->
   <div id="keyboard" class="grid grid-cols-10 gap-2"></div>
@@ -43,6 +74,7 @@
     const resultEl = document.getElementById("result");
     const dictCountEl = document.getElementById("dict-count");
     const categoryHintEl = document.getElementById("category-hint");
+    const popupEl = document.getElementById("popup");
 
     let dictionary = [];
     let answer = "";
@@ -107,18 +139,34 @@
       categoryHintEl.textContent = `カテゴリ: ${answerCategory}`;
     }
 
+    function showPopup(message) {
+      popupEl.textContent = message;
+      popupEl.style.opacity = "1";
+      setTimeout(() => {
+        popupEl.style.opacity = "0";
+      }, 2000);
+    }
+
+    function shakeRow(rowIndex) {
+      const row = boardEl.children[rowIndex];
+      row.classList.add("shake");
+      setTimeout(() => row.classList.remove("shake"), 300);
+    }
+
     function checkGuess(guess) {
       const rows = boardEl.children;
       const cells = rows[currentRow].children;
 
       if (guess.length !== 5) {
-        resultEl.textContent = "5文字入力してください";
+        showPopup("5文字入力してください");
+        shakeRow(currentRow);
         return;
       }
 
       const isValid = dictionary.some(item => item.word === guess);
       if (!isValid) {
-        resultEl.textContent = "辞書に存在しない単語です";
+        showPopup("辞書に存在しない単語です");
+        shakeRow(currentRow);
         return;
       }
 
@@ -133,12 +181,12 @@
       }
 
       if (guess === answer) {
-        resultEl.textContent = "🎉 正解！";
+        showPopup("🎉 正解！");
       } else {
         currentRow++;
         currentCol = 0;
         if (currentRow >= maxRows) {
-          resultEl.textContent = `残念！正解は「${answer}」`;
+          showPopup(`残念！正解は「${answer}」`);
         }
       }
     }
