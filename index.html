@@ -10,29 +10,20 @@
 <body class="bg-gray-900 text-white flex flex-col items-center p-4">
 
   <h1 class="text-3xl font-bold mb-2">J-wordle_TS</h1>
-
-  <!-- カテゴリヒント -->
-  <div id="category-hint" class="text-gray-300 text-lg mb-4"></div>
-
-  <!-- 語数バッジ -->
+  <div id="category-hint" class="text-gray-300 text-lg mb-2"></div>
   <div id="dict-count" class="bg-gray-700 px-3 py-1 rounded mb-4"></div>
 
-  <!-- 入力欄 -->
-  <div class="flex space-x-2 mb-4">
-    <input id="input" maxlength="5"
-      class="bg-gray-800 border border-gray-600 p-2 rounded w-40 text-center text-xl tracking-widest" />
-    <button id="enter"
-      class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">決定</button>
+  <!-- 盤面 -->
+  <div id="board" class="grid grid-rows-6 gap-2 mb-4">
+    <!-- JSで生成 -->
   </div>
-
-  <!-- 結果表示 -->
-  <div id="result" class="text-xl font-bold mb-4"></div>
 
   <!-- キーボード -->
   <div id="keyboard" class="grid grid-cols-10 gap-2"></div>
 
+  <div id="result" class="text-xl font-bold mt-4"></div>
+
   <script>
-    // ひらがなキーボード
     const keys = [
       "あ","い","う","え","お",
       "か","き","く","け","こ",
@@ -44,14 +35,34 @@
       "や","ゆ","よ",
       "ら","り","る","れ","ろ",
       "わ","を","ん",
-      "ー","゛","゜","小","削"
+      "削","決定"
     ];
 
+    const boardEl = document.getElementById("board");
     const keyboardEl = document.getElementById("keyboard");
-    const inputEl = document.getElementById("input");
     const resultEl = document.getElementById("result");
     const dictCountEl = document.getElementById("dict-count");
     const categoryHintEl = document.getElementById("category-hint");
+
+    let dictionary = [];
+    let answer = "";
+    let answerCategory = "";
+    let currentRow = 0;
+    let currentCol = 0;
+    const maxRows = 6;
+    const maxCols = 5;
+
+    // 盤面生成
+    for (let r = 0; r < maxRows; r++) {
+      const row = document.createElement("div");
+      row.className = "grid grid-cols-5 gap-2";
+      for (let c = 0; c < maxCols; c++) {
+        const cell = document.createElement("div");
+        cell.className = "w-12 h-12 border border-gray-600 flex items-center justify-center text-2xl font-bold";
+        row.appendChild(cell);
+      }
+      boardEl.appendChild(row);
+    }
 
     // キーボード生成
     keys.forEach(k => {
@@ -63,89 +74,76 @@
     });
 
     function handleKey(k) {
+      const rows = boardEl.children;
+      const cells = rows[currentRow].children;
+
       if (k === "削") {
-        inputEl.value = inputEl.value.slice(0, -1);
-        return;
-      }
-      if (k === "小") {
-        const last = inputEl.value.slice(-1);
-        const smallMap = { "や":"ゃ","ゆ":"ゅ","よ":"ょ","つ":"っ","わ":"ゎ" };
-        if (smallMap[last]) {
-          inputEl.value = inputEl.value.slice(0, -1) + smallMap[last];
+        if (currentCol > 0) {
+          currentCol--;
+          cells[currentCol].textContent = "";
         }
         return;
       }
-      if (k === "゛" || k === "゜") {
-        const last = inputEl.value.slice(-1);
-        const dakuten = {
-          "か":"が","き":"ぎ","く":"ぐ","け":"げ","こ":"ご",
-          "さ":"ざ","し":"じ","す":"ず","せ":"ぜ","そ":"ぞ",
-          "た":"だ","ち":"ぢ","つ":"づ","て":"で","と":"ど",
-          "は":"ば","ひ":"び","ふ":"ぶ","へ":"べ","ほ":"ぼ"
-        };
-        const handakuten = {
-          "は":"ぱ","ひ":"ぴ","ふ":"ぷ","へ":"ぺ","ほ":"ぽ"
-        };
-        if (k === "゛" && dakuten[last]) {
-          inputEl.value = inputEl.value.slice(0, -1) + dakuten[last];
-        }
-        if (k === "゜" && handakuten[last]) {
-          inputEl.value = inputEl.value.slice(0, -1) + handakuten[last];
-        }
+
+      if (k === "決定") {
+        if (currentCol < maxCols) return;
+        const guess = Array.from(cells).map(c => c.textContent).join("");
+        checkGuess(guess);
         return;
       }
-      if (inputEl.value.length < 5) {
-        inputEl.value += k;
+
+      if (currentCol < maxCols && /^[ぁ-んー]$/.test(k)) {
+        cells[currentCol].textContent = k;
+        currentCol++;
       }
     }
-
-    // ゲーム状態
-    let answer = "";
-    let answerCategory = "";
-    let dictionary = [];
 
     async function initGame() {
       dictionary = await fetch("dictionary.json").then(r => r.json());
-
       dictCountEl.textContent = `語数: ${dictionary.length}`;
-
       const answerObj = dictionary[Math.floor(Math.random() * dictionary.length)];
       answer = answerObj.word;
       answerCategory = answerObj.category;
-
       categoryHintEl.textContent = `カテゴリ: ${answerCategory}`;
     }
 
-    initGame();
-
-    // 判定
-    document.getElementById("enter").onclick = () => {
-      const guess = inputEl.value;
+    function checkGuess(guess) {
+      const rows = boardEl.children;
+      const cells = rows[currentRow].children;
 
       if (guess.length !== 5) {
         resultEl.textContent = "5文字入力してください";
         return;
       }
 
-      // 辞書に存在するかチェック
       const isValid = dictionary.some(item => item.word === guess);
       if (!isValid) {
         resultEl.textContent = "辞書に存在しない単語です";
         return;
       }
 
-      if (guess === answer) {
-        resultEl.textContent = "正解！";
-      } else {
-        let res = "";
-        for (let i = 0; i < 5; i++) {
-          if (guess[i] === answer[i]) res += "🟩";
-          else if (answer.includes(guess[i])) res += "🟨";
-          else res += "⬛";
+      for (let i = 0; i < 5; i++) {
+        if (guess[i] === answer[i]) {
+          cells[i].classList.add("bg-green-600");
+        } else if (answer.includes(guess[i])) {
+          cells[i].classList.add("bg-yellow-500");
+        } else {
+          cells[i].classList.add("bg-gray-700");
         }
-        resultEl.textContent = res;
       }
-    };
+
+      if (guess === answer) {
+        resultEl.textContent = "🎉 正解！";
+      } else {
+        currentRow++;
+        currentCol = 0;
+        if (currentRow >= maxRows) {
+          resultEl.textContent = `残念！正解は「${answer}」`;
+        }
+      }
+    }
+
+    initGame();
   </script>
 
 </body>
